@@ -13,7 +13,7 @@ from tf_helper_bot import (
 from tf_helper_bot.utils import prepare_tpu
 from tf_helper_bot.optimizers import RAdam
 
-from .models import PoolingBertModel, DualRobertaModel
+from .models import DualRobertaModel
 from .dataset import tfrecord_dataset
 from .metrics import SpearmanCorr
 
@@ -74,11 +74,7 @@ def train_model(
             train_path, batch_size, strategy, is_train=True)
         valid_ds, valid_steps = tfrecord_dataset(
             valid_path, valid_batch_size, strategy, is_train=False)
-        if model_name.lower().startswith("bert"):
-            config = BertConfig.from_pretrained(model_name, num_labels=30)
-            model = PoolingBertModel.from_pretrained(
-                model_name, config=config)
-        elif model_name.lower().startswith("roberta"):
+        if model_name.lower().startswith("roberta"):
             config = RobertaConfig.from_pretrained(model_name, num_labels=30)
             model = DualRobertaModel(
                 model_name=model_name, config=config)

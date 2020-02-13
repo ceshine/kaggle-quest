@@ -10,7 +10,7 @@ import tensorflow as tf
 from scipy.special import expit
 from transformers import AutoTokenizer, RobertaConfig
 
-from .models import PoolingBertModel, DualRobertaModel
+from .models import DualRobertaModel
 from .metrics import SpearmanCorr
 from .prepare_tfrecords import Preprocessor, OUTPUT_COLUMNS, INPUT_COLUMNS
 from .inference import ROBERTA_CONFIG, get_batch
@@ -43,9 +43,7 @@ def eval_fold(
     del tmp, inputs
 
     model_name = Path(model_path).name
-    if model_name.lower().startswith("bert"):
-        model = PoolingBertModel.from_pretrained(model_path)
-    elif model_name.lower().startswith("roberta-base"):
+    if model_name.lower().startswith("roberta-base"):
         config = RobertaConfig.from_dict(
             ROBERTA_CONFIG)
         model = DualRobertaModel(

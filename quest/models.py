@@ -1,53 +1,9 @@
 import tensorflow as tf
-import tensorflow_hub as hub
-from transformers import TFBertPreTrainedModel, TFRobertaPreTrainedModel, TFBertModel
-from transformers.modeling_tf_utils import get_initializer
-from transformers.modeling_tf_bert import TFBertMainLayer
+
+from transformers import TFRobertaPreTrainedModel
 from transformers.modeling_tf_roberta import TFRobertaMainLayer, TFRobertaClassificationHead
 
 from .prepare_tfrecords import QUESTION_COLUMNS, ANSWER_COLUMNS, JOINT_COLUMNS
-
-
-class PoolingBertModel(TFBertPreTrainedModel):
-    def __init__(self, config, *inputs, **kwargs):
-        super().__init__(config, *inputs, **kwargs)
-        self.num_labels = config.num_labels
-
-        self.pooling = tf.keras.layers.GlobalAveragePooling1D()
-        self.bert = TFBertMainLayer(config, name="bert")
-        # self.dropout = tf.keras.layers.Dropout(config.hidden_dropout_prob)
-        self.dropout = tf.keras.layers.Dropout(0.2)
-        self.classifier = tf.keras.layers.Dense(
-            config.num_labels,
-            # kernel_initializer=get_initializer(config.initializer_range),
-            name="classifier",
-            activation="linear"
-        )
-
-    def freeze(self):
-        self.bert.trainable = False
-
-    def unfreeze(self):
-        self.bert.trainable = True
-
-    def call(self, inputs, **kwargs):
-        outputs = self.bert(inputs, **kwargs)
-
-        sequence_output = outputs[0]
-        pooled_output = self.pooling(sequence_output)
-
-        pooler_output = outputs[1]
-        pooled_output = self.dropout(
-            tf.concat(
-                [pooled_output, pooler_output],
-                axis=1
-            ), training=kwargs.get("training", False))
-        logits = self.classifier(pooled_output)
-
-        # add hidden states and attention if they are here
-        outputs = (logits,) + outputs[2:]
-
-        return outputs
 
 
 class AveragePooling(tf.keras.layers.Layer):
@@ -107,12 +63,6 @@ class DualRobertaModel(tf.keras.Model):
             self.roberta = RobertaEncoder(
                 config=config, name="roberta_question")
         self.dropout = tf.keras.layers.Dropout(0.5)
-        # self.hidden_layer = tf.keras.layers.Dense(
-        #     1024,
-        #     kernel_initializer=tf.keras.initializers.he_normal(seed=None),
-        #     name="hidden",
-        #     activation="relu"
-        # )
         self.q_classifier = tf.keras.layers.Dense(
             len(QUESTION_COLUMNS),
             kernel_initializer=tf.keras.initializers.he_normal(seed=None),
@@ -134,7 +84,6 @@ class DualRobertaModel(tf.keras.Model):
         self.gating_q = SELayer(config.hidden_size, 4)
         self.gating_a = SELayer(config.hidden_size, 4)
         self.gating_j = SELayer(config.hidden_size * 3, 4)
-        # self.ln1 = tf.keras.layers.LayerNormalization()
 
     def freeze(self):
         self.roberta.trainable = False
@@ -162,9 +111,6 @@ class DualRobertaModel(tf.keras.Model):
             ],
             axis=1
         )
-        # hidden = self.hidden_layer(self.dropout(
-        #     combined, training=kwargs.get("training", False)
-        # ))
         q_logit = self.q_classifier(self.dropout(
             self.gating_q(
                 pooled_output_question
@@ -187,58 +133,3 @@ class DualRobertaModel(tf.keras.Model):
         # add hidden states and attention if they are here
         outputs = (logits,)
         return outputs
-
-
-def custom_bert_model(
-        max_sequence_length=512,
-        model_name="bert-base-uncased"):
-
-    input_word_ids = tf.keras.layers.Input(
-        (max_sequence_length,), dtype=tf.int32, name='input_word_ids')
-    input_masks = tf.keras.layers.Input(
-        (max_sequence_length,), dtype=tf.int32, name='input_masks')
-    input_segments = tf.keras.layers.Input(
-        (max_sequence_length,), dtype=tf.int32, name='input_segments')
-
-    bert_layer = TFBertModel.from_pretrained(model_name)
-
-    sequence_output, _ = bert_layer(
-        [input_word_ids, input_masks, input_segments])
-
-    x = tf.keras.layers.GlobalAveragePooling1D()(sequence_output)
-    x = tf.keras.layers.Dropout(0.2)(x)
-    out = tf.keras.layers.Dense(
-        30, activation="linear", name="dense_output")(x)
-
-    model = tf.keras.models.Model(
-        inputs=[input_word_ids, input_masks, input_segments], outputs=out)
-
-    return model
-
-
-def tfhub_bert_model(
-        max_sequence_length=512,
-        model_path="https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/1"):
-        # model_path="gs://tpu-experiment-tmp/bert-model/"):
-
-    input_word_ids = tf.keras.layers.Input(
-        (max_sequence_length,), dtype=tf.int32, name='input_word_ids')
-    input_masks = tf.keras.layers.Input(
-        (max_sequence_length,), dtype=tf.int32, name='input_masks')
-    input_segments = tf.keras.layers.Input(
-        (max_sequence_length,), dtype=tf.int32, name='input_segments')
-
-    bert_layer = hub.KerasLayer(model_path, trainable=True)
-
-    _, sequence_output = bert_layer(
-        [input_word_ids, input_masks, input_segments])
-
-    x = tf.keras.layers.GlobalAveragePooling1D()(sequence_output)
-    x = tf.keras.layers.Dropout(0.2)(x)
-    out = tf.keras.layers.Dense(
-        30, activation="linear", name="dense_output")(x)
-
-    model = tf.keras.models.Model(
-        inputs=[input_word_ids, input_masks, input_segments], outputs=out)
-
-    return model

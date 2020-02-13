@@ -12,7 +12,7 @@ from scipy.special import expit
 from transformers import AutoTokenizer
 from transformers import RobertaConfig
 
-from .models import PoolingBertModel, DualRobertaModel
+from .models import DualRobertaModel
 from .prepare_tfrecords import Preprocessor, INPUT_COLUMNS, OUTPUT_COLUMNS
 from .post_processing import prevent_nan
 
@@ -95,9 +95,7 @@ def main(
     for model_path in glob.glob(model_path_pattern):
         model_name = Path(model_path).name
         print(model_path, model_name)
-        if model_name.lower().startswith("bert"):
-            model = PoolingBertModel.from_pretrained(model_path)
-        elif model_name.lower().startswith("roberta-base"):
+        if model_name.lower().startswith("roberta-base"):
             config = RobertaConfig.from_dict(
                 ROBERTA_CONFIG)
             model = DualRobertaModel(
