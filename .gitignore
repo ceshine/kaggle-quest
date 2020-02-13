@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+# submission file
+*.csv
+
+# pyCharm files
+.idea/
+
+.mypy_cache/
+.vscode/
+
+*.7z
+*.zip
+
+bot
+input
+
+data/
+notebooks/.ipynb_checkpoints/
+docs/
+build/
+dist/
+*.egg-info/
+
+cache/
+logs/
+
+env.fish
