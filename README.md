@@ -4,7 +4,7 @@ The 5-fold models can be trained in about an hour using Colab TPU. The model per
 
 ![Submission Score](imgs/submission.png)
 
-This is at around 65th place on the private leaderboard. The post-processing (which unfortunately I did not use in the competition) gives a almost 0.03 score boost.
+This is at around 65th place on the private leaderboard. The post-processing (which unfortunately I did not use in the competition) gives an almost 0.03 score boost.
 
 [Inference Kernel on Kaggle](https://www.kaggle.com/ceshine/quest-roberta-inference?scriptVersionId=28553401)
 
