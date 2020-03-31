@@ -29,3 +29,7 @@ Run this command and then upload the content in `cache/tfrecords` to Google Clou
 `python -m quest.prepare_tfrecords --model-name roberta-base -n-folds 5`
 
 (Note: check [requirements.txt](requirements.txt) for missing dependencies.)
+
+## Acknowledgements
+
+Some of the TPU resources used in the project is generously sponsored by [TensorFlow Research Cloud](https://www.tensorflow.org/tfrc).
